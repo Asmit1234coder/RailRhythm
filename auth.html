@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth — Login & Sign up</title>
+  <style>
+    :root{
+      --bg:#071124;
+      --panel:#0f1724;
+      --muted:#93a4b8;
+      --accent:#2563eb;
+      --glass: rgba(255,255,255,0.03);
+      --radius:12px;
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071124 0%, #071b2a 60%);display:flex;align-items:center;justify-content:center}
+    .card{width:420px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:28px;border-radius:16px;box-shadow:0 18px 50px rgba(2,6,23,0.6);color:#fff}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:6px 0 18px 0;color:var(--muted);font-size:13px}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff;outline:none}
+    input::placeholder{color:rgba(255,255,255,0.28)}
+    .controls{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+    .remember{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+    .btn{width:100%;margin-top:16px;padding:10px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:linear-gradient(90deg,var(--accent),#5b21b6);color:white}
+    .msg{margin-top:12px;font-size:13px}
+    .error{color:#fb7185}
+    .success{color:#34d399}
+    .small{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+    .toggle{background:transparent;border:none;color:var(--accent);cursor:pointer;font-weight:700}
+    .hidden{display:none}
+    @media(max-width:480px){ .card{width:92%;padding:18px} }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div>
+        <h1 id="title">Sign in</h1>
+        <div style="font-size:12px;color:var(--muted)" id="subtitle">Enter your credentials to access the control center.</div>
+      </div>
+    </div>
+
+    <p class="lead" id="lead">Welcome back — please sign in.</p>
+
+    <form id="authForm" autocomplete="off">
+      <div id="nameRow" class="hidden">
+        <label for="name">Full name</label>
+        <input id="name" type="text" placeholder="Your full name" />
+      </div>
+
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="you@domain.com" required />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="Enter password" required />
+
+      <div id="confirmRow" class="hidden">
+        <label for="confirm">Confirm password</label>
+        <input id="confirm" type="password" placeholder="Re-enter password" />
+      </div>
+
+      <div class="controls">
+        <label class="remember"><input id="remember" type="checkbox"/> Remember me</label>
+        <button type="button" id="forgot" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px">Forgot?</button>
+      </div>
+
+      <button class="btn" type="submit" id="submitBtn">Sign in</button>
+
+      <div id="message" class="msg" aria-live="polite"></div>
+
+      <div class="small">
+        <span id="altText">Don't have an account?</span>
+        <button type="button" id="toggleMode" class="toggle">Create account</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Login + signup; store users in localStorage with SHA-256 password hashing
+    const authForm = document.getElementById('authForm');
+    const toggleMode = document.getElementById('toggleMode');
+    const nameRow = document.getElementById('nameRow');
+    const confirmRow = document.getElementById('confirmRow');
+    const submitBtn = document.getElementById('submitBtn');
+    const message = document.getElementById('message');
+    const title = document.getElementById('title');
+    const subtitle = document.getElementById('subtitle');
+    const lead = document.getElementById('lead');
+    const altText = document.getElementById('altText');
+
+    let mode = 'login'; // or 'signup'
+
+    function setMode(m){
+      mode = m;
+      if(mode === 'signup'){
+        title.textContent = 'Create account';
+        subtitle.textContent = 'Create your account to access the control center.';
+        lead.textContent = 'It only takes a minute.';
+        nameRow.classList.remove('hidden');
+        confirmRow.classList.remove('hidden');
+        submitBtn.textContent = 'Create account';
+        altText.textContent = 'Already have an account?';
+        toggleMode.textContent = 'Sign in';
+      } else {
+        title.textContent = 'Sign in';
+        subtitle.textContent = 'Enter your credentials to access the control center.';
+        lead.textContent = 'Welcome back — please sign in.';
+        nameRow.classList.add('hidden');
+        confirmRow.classList.add('hidden');
+        submitBtn.textContent = 'Sign in';
+        altText.textContent = "Don't have an account?";
+        toggleMode.textContent = 'Create account';
+      }
+      message.textContent = '';
+      message.className = 'msg';
+    }
+
+    toggleMode.addEventListener('click', ()=> setMode(mode === 'login' ? 'signup' : 'login'));
+
+    // SHA-256 helper
+    async function sha256(text){
+      const enc = new TextEncoder();
+      const data = enc.encode(text);
+      const hash = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function loadUsers(){
+      try{ return JSON.parse(localStorage.getItem('users') || '{}'); }catch(e){
+        // fallback for old array style
+        try{ const arr = JSON.parse(localStorage.getItem('users') || '[]'); const map = {}; if(Array.isArray(arr)) arr.forEach(u=>{ if(u.email) map[u.email]=u }); return map }catch(e){ return {} }
+      }
+    }
+    function saveUsers(users){ localStorage.setItem('users', JSON.stringify(users)); }
+
+    function show(text, type){ message.textContent = text; message.className = 'msg ' + (type==='error' ? 'error' : 'success'); }
+
+    // form submit
+    authForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      message.textContent = '';
+      submitBtn.disabled = true;
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
+      const remember = document.getElementById('remember').checked;
+
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ show('Enter a valid email','error'); submitBtn.disabled=false; return; }
+
+      const users = loadUsers();
+
+      if(mode === 'signup'){
+        if(!name){ show('Enter your name','error'); submitBtn.disabled=false; return; }
+        if(password.length < 6){ show('Password should be at least 6 characters','error'); submitBtn.disabled=false; return; }
+        if(password !== confirm){ show('Passwords do not match','error'); submitBtn.disabled=false; return; }
+        if(users[email]){ show('Email already registered','error'); submitBtn.disabled=false; return; }
+
+        const ph = await sha256(password);
+        users[email] = { name, passwordHash: ph, createdAt: new Date().toISOString() };
+        saveUsers(users);
+        show('Account created successfully. You can now sign in.','success');
+        setMode('login');
+        // prefill email
+        document.getElementById('email').value = email;
+      } else {
+        const user = users[email];
+        if(!user){ show('No account found for this email','error'); submitBtn.disabled=false; return; }
+        const ph = await sha256(password);
+        if(ph !== user.passwordHash){ show('Invalid email or password','error'); submitBtn.disabled=false; return; }
+
+        // success
+        if(remember) localStorage.setItem('lastLoggedIn', email); else localStorage.removeItem('lastLoggedIn');
+        show('Signed in — welcome ' + (user.name || '') ,'success');
+        // TODO: redirect to dashboard if needed.
+      }
+
+      submitBtn.disabled = false;
+    });
+
+    // init
+    (function(){
+      const last = localStorage.getItem('lastLoggedIn');
+      if(last) document.getElementById('email').value = last;
+      setMode('login');
+    })();
+  </script>
+</body>
+</html>
