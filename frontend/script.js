@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
+    let timelineChart; // Chart.js instance
+
     const App = {
         // --- INITIALIZATION ---
         init() {
-            // this.startDummyAlerts(); // disable dummy alerts
             console.log("Traffic Control Center UI Initialized.");
             this.setupEventListeners();
             this.showPage('control-center'); // Default page
-            this.startLiveUpdates(); // start dummy metrics updates
-            this.startDummyAlerts(); // start dummy alerts
+            this.startLiveUpdates();
+            this.startDummyAlerts();
         },
 
         // --- CONTENT SWITCHING LOGIC ---
@@ -16,13 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.content-page').forEach(page => {
                 page.classList.add('hidden');
             });
-
             const targetPage = document.getElementById(pageId);
-            if (targetPage) {
-                targetPage.classList.remove('hidden');
-            } else {
-                console.error(`Error: Page with ID "${pageId}" not found.`);
-            }
+            if (targetPage) targetPage.classList.remove('hidden');
+            else console.error(`Error: Page with ID "${pageId}" not found.`);
         },
 
         // --- EVENT LISTENER SETUP ---
@@ -32,16 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
             navItems.forEach(item => {
                 item.addEventListener('click', () => {
                     if (item.classList.contains('active')) return;
-
-                    // Update active states
                     navItems.forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
-
-                    // Show target content
-                    const targetPageId = item.dataset.target;
-                    this.showPage(targetPageId);
-
-                    console.log(`Switched to: ${item.querySelector('span').textContent}`);
+                    this.showPage(item.dataset.target);
                 });
             });
 
@@ -49,19 +38,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const aiInsightsButton = document.getElementById('ai-insights-btn');
             if (aiInsightsButton) {
                 aiInsightsButton.addEventListener('click', () => {
-                    console.log("'AI Insights' button clicked.");
                     const insightsPanel = document.querySelector('.insights-panel');
                     if (insightsPanel) {
                         insightsPanel.style.transition = 'box-shadow 0.3s ease';
                         insightsPanel.style.boxShadow = '0 0 25px rgba(59, 130, 246, 0.6)';
-                        setTimeout(() => {
-                            insightsPanel.style.boxShadow = 'none';
-                        }, 1500);
+                        setTimeout(() => insightsPanel.style.boxShadow = 'none', 1500);
                     }
                 });
             }
 
-            // Sidebar toggle for mobile
+            // Sidebar toggle (mobile)
             const toggleBtn = document.getElementById("toggle-sidebar");
             if (toggleBtn) {
                 toggleBtn.addEventListener("click", () => {
@@ -72,57 +58,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- LIVE METRICS UPDATE ---
         startLiveUpdates() {
-    this.updateMetricsOnce();
-    this.fetchTimeline();   // NEW
-
-    setInterval(() => {
-        this.updateMetricsOnce();
-        this.fetchTimeline();   // NEW
-    }, 3000);
-},
+            this.updateMetricsOnce();
+            this.fetchTimeline();
+            setInterval(() => {
+                this.updateMetricsOnce();
+                this.fetchTimeline();
+            }, 3000);
+        },
 
         updateMetricsOnce() {
-    fetch("http://127.0.0.1:8000/metrics")
-      .then(res => res.json())
-      .then(data => {
-        // Update KPI metrics
-        document.getElementById("active-trains").textContent = data.active_trains;
-        document.getElementById("network-efficiency").textContent = data.efficiency + "%";
-        document.getElementById("avg-delay").textContent = data.avg_delay + " min";
+            fetch("http://127.0.0.1:8000/metrics")
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("active-trains").textContent = data.active_trains;
+                    document.getElementById("network-efficiency").textContent = data.efficiency + "%";
+                    document.getElementById("avg-delay").textContent = data.avg_delay + " min";
 
-        document.getElementById("on-time-metric").textContent = data.on_time + "%";
-        document.getElementById("on-time-bar").style.width = data.on_time + "%";
+                    document.getElementById("on-time-metric").textContent = data.on_time + "%";
+                    document.getElementById("on-time-bar").style.width = data.on_time + "%";
 
-        document.getElementById("avg-speed-metric").textContent = data.avg_speed + " km/h";
-        document.getElementById("avg-speed-bar").style.width = (data.avg_speed / 120 * 100) + "%";
+                    document.getElementById("avg-speed-metric").textContent = data.avg_speed + " km/h";
+                    document.getElementById("avg-speed-bar").style.width = (data.avg_speed / 120 * 100) + "%";
 
-        document.getElementById("efficiency-metric").textContent = data.efficiency + "%";
-        document.getElementById("efficiency-bar").style.width = data.efficiency + "%";
+                    document.getElementById("efficiency-metric").textContent = data.efficiency + "%";
+                    document.getElementById("efficiency-bar").style.width = data.efficiency + "%";
 
-        // Update alerts
-        const alertsContainer = document.getElementById("alerts-container");
-        alertsContainer.innerHTML = "";
-        data.alerts.forEach(alert => {
-          const div = document.createElement("div");
-          div.className = "alert-item text-sm text-yellow-400";
-          div.textContent = "⚠️ " + alert;
-          alertsContainer.appendChild(div);
-        });
+                    // Alerts
+                    const alertsContainer = document.getElementById("alerts-container");
+                    alertsContainer.innerHTML = "";
+                    data.alerts.forEach(alert => {
+                        const div = document.createElement("div");
+                        div.className = "alert-item text-sm text-yellow-400";
+                        div.textContent = "⚠️ " + alert;
+                        alertsContainer.appendChild(div);
+                    });
+                    document.getElementById("active-alerts-count").textContent = data.alerts.length;
+                })
+                .catch(err => console.error("Error fetching /metrics", err));
+        },
 
-        // Update alerts KPI card
-        document.getElementById("active-alerts-count").textContent = data.alerts.length;
-      })
-      .catch(err => console.error("Error loading results.json", err));
-},
-fetchTimeline() {
-    fetch("http://127.0.0.1:8000/timeline")
-      .then(res => res.json())
-      .then(data => {
-        console.log("Timeline data:", data.timeline);
-        // TODO: draw Gantt chart or animate trains
-      })
-      .catch(err => console.error("Error fetching timeline", err));
-},
+        fetchTimeline() {
+            fetch("http://127.0.0.1:8000/timeline")
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Timeline data:", data.timeline);
+                    renderTimeline(data.timeline); // ✅ draw chart
+                })
+                .catch(err => console.error("Error fetching /timeline", err));
+        },
 
         // --- DUMMY ALERT GENERATOR ---
         startDummyAlerts() {
@@ -137,58 +120,85 @@ fetchTimeline() {
                 "Freight Train 88901 rerouted to avoid delay"
             ];
 
-            const alertsCard = alertsContainer.closest('.card');
-            const alertsTitleEl = alertsCard ? alertsCard.querySelector('h2') : null;
             const activeAlertsCountEl = document.getElementById("active-alerts-count");
 
             const updateAlertsTitle = () => {
                 const count = alertsContainer.querySelectorAll('.alert-item').length;
-                if (alertsTitleEl) {
-                    alertsTitleEl.textContent = `Active Alerts (${count})`;
-                }
-                if (activeAlertsCountEl) {
-                    activeAlertsCountEl.textContent = count; // update KPI card
-                }
+                if (activeAlertsCountEl) activeAlertsCountEl.textContent = count;
             };
-
-            const removePlaceholderIfPresent = () => {
-                const children = Array.from(alertsContainer.children);
-                children.forEach(ch => {
-                    const txt = (ch.textContent || '').trim().toLowerCase();
-                    if (txt.includes('no active alert')) ch.remove();
-                });
-            };
-
-            removePlaceholderIfPresent();
-            updateAlertsTitle();
 
             setInterval(() => {
-                removePlaceholderIfPresent();
-
                 const randomAlert = dummyAlerts[Math.floor(Math.random() * dummyAlerts.length)];
                 const alertEl = document.createElement("div");
                 alertEl.className = "alert-item text-sm text-yellow-400";
-                alertEl.style.wordBreak = "break-word";
                 alertEl.textContent = `⚠️ ${randomAlert} — ${new Date().toLocaleTimeString()}`;
-
                 alertsContainer.prepend(alertEl);
 
                 const items = alertsContainer.querySelectorAll('.alert-item');
-                if (items.length > 5) {
-                    items[items.length - 1].remove();
-                }
-
+                if (items.length > 5) items[items.length - 1].remove();
                 updateAlertsTitle();
             }, 10000);
-        },
+        }
     };
 
+    // --- TIMELINE RENDER FUNCTION ---
+    function renderTimeline(timelineData) {
+        const ctx = document.getElementById("timelineChart").getContext("2d");
+        const trains = [...new Set(timelineData.map(d => d.train))];
+
+        const colors = {
+            "T1": "rgba(255,99,132,0.8)",
+            "T2": "rgba(54,162,235,0.8)",
+            "T3": "rgba(75,192,192,0.8)"
+        };
+
+        const datasets = trains.map(train => {
+            const trainData = timelineData.filter(d => d.train === train);
+            return {
+                label: train,
+                data: trainData.map(d => ({
+                    x: [d.start, d.end],
+                    y: train,
+                    block: d.block
+                })),
+                backgroundColor: colors[train] || "rgba(200,200,200,0.8)"
+            };
+        });
+
+        if (timelineChart) timelineChart.destroy();
+
+        timelineChart = new Chart(ctx, {
+            type: "bar",
+            data: { datasets },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const d = ctx.raw;
+                                return `Block ${d.block} | ${d.x[0]} → ${d.x[1]}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: "linear",
+                        position: "bottom",
+                        title: { display: true, text: "Time" }
+                    },
+                    y: {
+                        type: "category",
+                        labels: trains,
+                        title: { display: true, text: "Trains" }
+                    }
+                }
+            }
+        });
+    }
+
     App.init();
-
 });
-
-
-
-
-
 

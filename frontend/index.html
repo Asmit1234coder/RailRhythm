@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-[#0F172A] text-gray-200 font-sans flex">
 
@@ -257,6 +258,11 @@
       <span id="efficiency-metric" class="ml-2 font-semibold text-green-400">0%</span>
     </div>
   </div>
+</div>
+<!-- Train Timeline Visualization -->
+<div class="card mt-8">
+  <h2 class="text-lg font-semibold mb-4">Train Timeline</h2>
+  <canvas id="timelineChart" height="200"></canvas>
 </div>
 
   </main>
