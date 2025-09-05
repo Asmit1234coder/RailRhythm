@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const App = {
         // --- INITIALIZATION ---
         init() {
+            // this.startDummyAlerts(); // disable dummy alerts
             console.log("Traffic Control Center UI Initialized.");
             this.setupEventListeners();
             this.showPage('control-center'); // Default page
@@ -71,55 +72,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- LIVE METRICS UPDATE ---
         startLiveUpdates() {
-            this.updateMetricsOnce(); // run immediately
-            setInterval(() => {
-                this.updateMetricsOnce();
-            }, 3000);
-        },
+    this.updateMetricsOnce();
+    this.fetchTimeline();   // NEW
+
+    setInterval(() => {
+        this.updateMetricsOnce();
+        this.fetchTimeline();   // NEW
+    }, 3000);
+},
 
         updateMetricsOnce() {
-            // On-Time Performance
-            const onTime = Math.floor(Math.random() * 100);
-            const onTimeMetric = document.getElementById("on-time-metric");
-            const onTimeBar = document.getElementById("on-time-bar");
-            if (onTimeMetric && onTimeBar) {
-                onTimeMetric.textContent = onTime + "%";
-                onTimeBar.style.width = onTime + "%";
-            }
+    fetch("http://127.0.0.1:8000/metrics")
+      .then(res => res.json())
+      .then(data => {
+        // Update KPI metrics
+        document.getElementById("active-trains").textContent = data.active_trains;
+        document.getElementById("network-efficiency").textContent = data.efficiency + "%";
+        document.getElementById("avg-delay").textContent = data.avg_delay + " min";
 
-            // Average Speed
-            const speed = Math.floor(Math.random() * 80) + 40; // 40–120 km/h
-            const speedMetric = document.getElementById("avg-speed-metric");
-            const speedBar = document.getElementById("avg-speed-bar");
-            if (speedMetric && speedBar) {
-                speedMetric.textContent = speed + " km/h";
-                speedBar.style.width = (speed / 120 * 100) + "%";
-            }
+        document.getElementById("on-time-metric").textContent = data.on_time + "%";
+        document.getElementById("on-time-bar").style.width = data.on_time + "%";
 
-            // Network Efficiency
-            const efficiency = Math.floor(Math.random() * 100);
-            const effMetric = document.getElementById("efficiency-metric");
-            const effBar = document.getElementById("efficiency-bar");
-            if (effMetric && effBar) {
-                effMetric.textContent = efficiency + "%";
-                effBar.style.width = efficiency + "%";
-            }
+        document.getElementById("avg-speed-metric").textContent = data.avg_speed + " km/h";
+        document.getElementById("avg-speed-bar").style.width = (data.avg_speed / 120 * 100) + "%";
 
-            // --- UPDATE KPI CARDS ---
-            // Active Trains (simulate 0–10)
-            const activeTrains = Math.floor(Math.random() * 10);
-            const activeTrainsEl = document.getElementById("active-trains");
-            if (activeTrainsEl) activeTrainsEl.textContent = activeTrains;
+        document.getElementById("efficiency-metric").textContent = data.efficiency + "%";
+        document.getElementById("efficiency-bar").style.width = data.efficiency + "%";
 
-            // Network Efficiency KPI
-            const netEffEl = document.getElementById("network-efficiency");
-            if (netEffEl) netEffEl.textContent = efficiency + "%";
+        // Update alerts
+        const alertsContainer = document.getElementById("alerts-container");
+        alertsContainer.innerHTML = "";
+        data.alerts.forEach(alert => {
+          const div = document.createElement("div");
+          div.className = "alert-item text-sm text-yellow-400";
+          div.textContent = "⚠️ " + alert;
+          alertsContainer.appendChild(div);
+        });
 
-            // Avg Delay (simulate 0–15 min)
-            const delay = Math.floor(Math.random() * 15);
-            const avgDelayEl = document.getElementById("avg-delay");
-            if (avgDelayEl) avgDelayEl.textContent = delay + " min";
-        },
+        // Update alerts KPI card
+        document.getElementById("active-alerts-count").textContent = data.alerts.length;
+      })
+      .catch(err => console.error("Error loading results.json", err));
+},
+fetchTimeline() {
+    fetch("http://127.0.0.1:8000/timeline")
+      .then(res => res.json())
+      .then(data => {
+        console.log("Timeline data:", data.timeline);
+        // TODO: draw Gantt chart or animate trains
+      })
+      .catch(err => console.error("Error fetching timeline", err));
+},
 
         // --- DUMMY ALERT GENERATOR ---
         startDummyAlerts() {

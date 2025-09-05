@@ -1,0 +1,61 @@
+# Train Traffic Control Hackathon Project
+
+## 📦 Dependencies
+Install these Python packages (use your virtual environment if needed):
+```
+pip install fastapi uvicorn simpy
+```
+
+Optional (for testing / local JSON manipulation):
+```
+pip install requests
+```
+
+---
+
+## ▶️ Steps to Run the Project
+
+1. **Clone / open the project folder**  
+   Ensure your folder structure looks like this:
+   ```
+   project/
+   │── backend.py
+   │── frontend/
+   │    ├── index.html
+   │    ├── script.js
+   │    ├── style.css
+   │    └── auth.html
+   ```
+
+2. **Start the FastAPI backend**  
+   Run this command in the project root (where `backend.py` is):
+   ```bash
+   uvicorn backend:app --reload
+   ```
+
+   By default the backend runs at:  
+   👉 http://127.0.0.1:8000/
+
+3. **Access the frontend**  
+   Since the backend is already serving static files (via FastAPI `StaticFiles`), just open:  
+   👉 http://127.0.0.1:8000/  
+
+   This will load `index.html` from the `frontend/` folder.
+
+4. **Test the API Endpoints**  
+   - Metrics: http://127.0.0.1:8000/metrics  
+   - Timeline: http://127.0.0.1:8000/timeline  
+
+   You should see JSON responses.
+
+5. **Dashboard Updates**  
+   - `script.js` automatically fetches `/metrics` every 3 seconds for live KPIs.  
+   - It also fetches `/timeline` for train scheduling logs (can be visualized as Gantt chart or animation).
+
+---
+
+## ⚡ Notes
+
+- Backend generates simulation results on-demand.  
+- For deployment, you may need to adjust `allow_origins` in `backend.py` (CORS settings).
+
